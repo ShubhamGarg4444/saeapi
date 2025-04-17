@@ -5,6 +5,7 @@ const userSchema = new mongoose.Schema({
     password: { type: String, required: true },
     RollNo: { type: String, required: true },
     BarCode: { type: String, required: true },
+    IdCard: {type:String, required:true}
 })
 
 const User = mongoose.models.user || mongoose.model('user', userSchema);
