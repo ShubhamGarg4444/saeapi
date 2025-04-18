@@ -1,23 +1,26 @@
 import User from "../models/user.js";
 import bcrypt from "bcryptjs"
 import jwt from "jsonwebtoken"
-import multerUpload from "../configs/multer.js"
 import cloudinary from "../configs/cloudinary.js"
 
-export const RegisterUser = async (req, res) => {
+export const RegisterUser = async (req, res) => 
+  {
     try {
-      multerUpload.single("IdCard")(req, res, async function (err) {
-        if (err) {
-          console.log(err);
-          return res.status(500).json({
-            success: false,
-            message: "Error uploading image",
-          });
-        }
+      
+      if (!req.file) {
+        return res.status(400).json({
+          success: false,
+          message: "No file uploaded",
+        });
+      }
   
-        const result = await cloudinary.uploader.upload(req.file.path);
-        const ImageURL = result.secure_url;
+  
         const { Name, RollNo, BarCode, password } = req.body;
+        console.log(req.body);
+        const result = await cloudinary.uploader.upload(req.file.path);
+        console.log(req.file);
+        const ImageURL = result.secure_url;
+        console.log(ImageURL);
   
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(password, salt);
@@ -43,7 +46,6 @@ export const RegisterUser = async (req, res) => {
           message: "Data saved successfully",
           data: newUser,
         });
-      });
     } catch (error) {
       console.error("Error creating user:", error);
       res.status(500).json({
@@ -59,21 +61,29 @@ export const login = async (req, res) => {
 
         const { RollNo, password } = req.body;
 
+        if (!password) {
+          return res.status(400).json({
+            success: false,
+            message: "Password is required",
+          });
+        }        
+        console.log(password);
         if (!RollNo) {
             return res.json({ success: false, message: " roll no is required" })
         }
-
+        console.log(RollNo);
         const user = await User.findOne({ RollNo })
 
         if (!user) {
             return res.json({ success: false, message: "Couldn't find User." })
         }
-
-        const isValidPassword = await bcrypt.compare(password,user.password)
+        console.log("found user");
+        const isValidPassword = await bcrypt.compare(password , user.password)
 
         if (!isValidPassword){
             return res.status(401).send('Invalid Password!');
         }
+        console.log("compared passwords.");
 
         const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '7d' })
 
